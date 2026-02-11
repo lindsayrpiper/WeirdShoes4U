@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Navbar from '@/frontend/components/Navbar';
+import CartSlideOut from '@/frontend/components/CartSlideOut';
 import { CartProvider } from '@/frontend/context/CartContext';
 import { AuthProvider } from '@/frontend/context/AuthContext';
 
@@ -23,6 +24,7 @@ export default function RootLayout({
         <AuthProvider>
           <CartProvider>
             <Navbar />
+            <CartSlideOut />
             <main className="min-h-screen">
               {children}
             </main>

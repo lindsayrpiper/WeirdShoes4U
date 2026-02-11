@@ -6,7 +6,7 @@ import { useAuth } from '@/frontend/context/AuthContext';
 import { ShoppingCart, User, LogOut } from 'lucide-react';
 
 export default function Navbar() {
-  const { getCartItemCount } = useCart();
+  const { getCartItemCount, openCart } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
   const cartCount = getCartItemCount();
 
@@ -34,14 +34,14 @@ export default function Navbar() {
           {/* Right Side Icons */}
           <div className="flex items-center space-x-4">
             {/* Cart Icon */}
-            <Link href="/cart" className="relative">
+            <button onClick={openCart} className="relative">
               <ShoppingCart className="w-6 h-6 text-gray-700 hover:text-primary-600" />
               {cartCount > 0 && (
                 <span className="absolute -top-2 -right-2 bg-primary-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {cartCount}
                 </span>
               )}
-            </Link>
+            </button>
 
             {/* User Menu */}
             {isAuthenticated ? (
