@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Cart, Product } from '@/types';
+import * as Sentry from '@sentry/nextjs';
 
 interface CartContextType {
   cart: Cart | null;
@@ -44,8 +45,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       if (data.success) {
         setCart(data.data);
+        Sentry.logger.info('Cart loaded', { cartId: id, itemCount: data.data.items?.length ?? 0 });
       }
     } catch (error) {
+      Sentry.captureException(error);
       console.error('Failed to fetch cart:', error);
     } finally {
       setLoading(false);
@@ -53,94 +56,127 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const addToCart = async (product: Product, quantity: number = 1) => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cartId,
-          productId: product.id,
-          quantity,
-        }),
-      });
+    return Sentry.startSpan(
+      { name: 'cart.add_item', op: 'cart.mutation', attributes: { productId: product.id, quantity } },
+      async () => {
+        try {
+          setLoading(true);
+          Sentry.logger.info('Adding item to cart', { productId: product.id, productName: product.name, quantity });
+          const response = await fetch('/api/cart', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cartId,
+              productId: product.id,
+              quantity,
+            }),
+          });
 
-      const data = await response.json();
+          const data = await response.json();
 
-      if (data.success) {
-        const newCartId = data.data.id;
-        setCartId(newCartId);
-        localStorage.setItem('cartId', newCartId);
+          if (data.success) {
+            const newCartId = data.data.id;
+            setCartId(newCartId);
+            localStorage.setItem('cartId', newCartId);
+            Sentry.logger.info('Item added to cart', {
+              cartId: newCartId,
+              productId: product.id,
+              cartTotal: data.data.total,
+              itemCount: data.data.items?.length ?? 0,
+            });
 
-        setTimeout(() => {
-          setCart(data.data);
-        }, 50);
-      } else {
-        throw new Error(data.error);
+            setTimeout(() => {
+              setCart(data.data);
+            }, 50);
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+          Sentry.logger.error('Failed to add item to cart', { productId: product.id });
+          console.error('Failed to add to cart:', error);
+          throw error;
+        } finally {
+          setTimeout(() => {
+            setLoading(false);
+          }, 100);
+        }
       }
-    } catch (error) {
-      console.error('Failed to add to cart:', error);
-      throw error;
-    } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
-    }
+    );
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {
     if (!cartId) return;
 
-    try {
-      setLoading(true);
-      const response = await fetch('/api/cart', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cartId,
-          productId,
-          quantity,
-        }),
-      });
+    return Sentry.startSpan(
+      { name: 'cart.update_quantity', op: 'cart.mutation', attributes: { productId, quantity, cartId } },
+      async () => {
+        try {
+          setLoading(true);
+          Sentry.logger.info('Updating cart item quantity', { cartId, productId, quantity });
+          const response = await fetch('/api/cart', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              cartId,
+              productId,
+              quantity,
+            }),
+          });
 
-      const data = await response.json();
-      if (data.success) {
-        setCart(data.data);
-      } else {
-        throw new Error(data.error);
+          const data = await response.json();
+          if (data.success) {
+            setCart(data.data);
+            Sentry.logger.info('Cart item quantity updated', { cartId, productId, newQuantity: quantity, cartTotal: data.data.total });
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+          Sentry.logger.error('Failed to update cart item quantity', { cartId, productId });
+          console.error('Failed to update quantity:', error);
+          throw error;
+        } finally {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Failed to update quantity:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const removeFromCart = async (productId: string) => {
     if (!cartId) return;
 
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/cart?cartId=${cartId}&productId=${productId}`, {
-        method: 'DELETE',
-      });
+    return Sentry.startSpan(
+      { name: 'cart.remove_item', op: 'cart.mutation', attributes: { productId, cartId } },
+      async () => {
+        try {
+          setLoading(true);
+          Sentry.logger.info('Removing item from cart', { cartId, productId });
+          const response = await fetch(`/api/cart?cartId=${cartId}&productId=${productId}`, {
+            method: 'DELETE',
+          });
 
-      const data = await response.json();
-      if (data.success) {
-        setCart(data.data);
-      } else {
-        throw new Error(data.error);
+          const data = await response.json();
+          if (data.success) {
+            setCart(data.data);
+            Sentry.logger.info('Item removed from cart', { cartId, productId, remainingItems: data.data.items?.length ?? 0 });
+          } else {
+            throw new Error(data.error);
+          }
+        } catch (error) {
+          Sentry.captureException(error);
+          Sentry.logger.error('Failed to remove item from cart', { cartId, productId });
+          console.error('Failed to remove from cart:', error);
+          throw error;
+        } finally {
+          setLoading(false);
+        }
       }
-    } catch (error) {
-      console.error('Failed to remove from cart:', error);
-      throw error;
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   const clearCart = () => {
+    Sentry.logger.info('Cart cleared', { cartId });
     setCart(null);
     setCartId(null);
     localStorage.removeItem('cartId');
