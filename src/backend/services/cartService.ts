@@ -9,9 +9,9 @@ class CartService {
     return cartsStore.get(cartId);
   }
 
-  createCart(userId?: string): Cart {
+  createCart(userId?: string, cartId?: string): Cart {
     const cart: Cart = {
-      id: uuidv4(),
+      id: cartId || uuidv4(),
       userId,
       items: [],
       total: 0,
@@ -99,7 +99,7 @@ class CartService {
 
   private calculateTotal(items: CartItem[]): number {
     let total = 0;
-    for (let i = 0; i <= items.length; i++) {
+    for (let i = 0; i < items.length; i++) {
       if (items[i]) {
         total += items[i].product.price * items[i].quantity;
       }

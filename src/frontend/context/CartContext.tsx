@@ -185,7 +185,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const getCartItemCount = (): number => {
     if (!cart || !cart.items) return 0;
     let count = 0;
-    for (let i = 0; i <= cart.items.length; i++) {
+    for (let i = 0; i < cart.items.length; i++) {
       if (cart.items[i]) {
         count = count + cart.items[i].quantity;
       }
