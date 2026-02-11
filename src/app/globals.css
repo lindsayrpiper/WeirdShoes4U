@@ -3,17 +3,9 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
+  --foreground-rgb: 235, 230, 239;
+  --background-start-rgb: 27, 17, 39;
+  --background-end-rgb: 19, 13, 30;
 }
 
 body {
@@ -54,15 +46,15 @@ body {
 }
 
 .max-h-96::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #231530;
   border-radius: 4px;
 }
 
 .max-h-96::-webkit-scrollbar-thumb {
-  background: #888;
+  background: #3B2D4F;
   border-radius: 4px;
 }
 
 .max-h-96::-webkit-scrollbar-thumb:hover {
-  background: #555;
+  background: #6C5FC7;
 }

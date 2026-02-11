@@ -23,19 +23,21 @@ export default async function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-purple-600 to-purple-900 text-white py-20">
+      <section className="bg-gradient-to-br from-surface-400 via-primary-900 to-surface-200 text-sentry-text py-24">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">WeirdShoes4U - Sentry Edition</h1>
-            <p className="text-xl mb-8">
-              Funky Sentry-themed shoes for developers who debug in style
+            <h1 className="text-5xl font-bold mb-6">
+              Weird<span className="text-accent-pink">Shoes</span><span className="text-primary-500">4U</span>
+            </h1>
+            <p className="text-xl mb-8 text-sentry-muted">
+              Funky shoes for developers who debug in style
             </p>
             <div className="mb-8">
               <SearchBar />
             </div>
             <Link
               href="/products"
-              className="inline-block bg-white text-primary-600 px-8 py-3 rounded-md font-semibold hover:bg-gray-100 transition-colors"
+              className="inline-block bg-primary-500 text-white px-8 py-3 rounded-md font-semibold hover:bg-primary-400 transition-colors"
             >
               Shop Now
             </Link>
@@ -46,49 +48,49 @@ export default async function Home() {
       {/* Featured Products Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-sentry-text">Featured Products</h2>
           {featuredProducts.length > 0 ? (
             <ProductList products={featuredProducts} />
           ) : (
             <div className="text-center py-12">
-              <p className="text-gray-600">Loading featured products...</p>
+              <p className="text-sentry-muted">Loading featured products...</p>
             </div>
           )}
         </div>
       </section>
 
       {/* Categories Section */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-16 bg-surface-200">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Shop by Style</h2>
+          <h2 className="text-3xl font-bold text-center mb-12 text-sentry-text">Shop by Style</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link
               href="/products?category=Running Shoes"
-              className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
+              className="bg-surface-100 border border-sentry-border rounded-lg p-8 text-center hover:border-primary-500 transition-colors"
             >
-              <h3 className="text-xl font-semibold mb-2">Running Shoes</h3>
-              <p className="text-gray-600">Debug on the run</p>
+              <h3 className="text-xl font-semibold mb-2 text-sentry-text">Running Shoes</h3>
+              <p className="text-sentry-muted">Debug on the run</p>
             </Link>
             <Link
               href="/products?category=Heels"
-              className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
+              className="bg-surface-100 border border-sentry-border rounded-lg p-8 text-center hover:border-primary-500 transition-colors"
             >
-              <h3 className="text-xl font-semibold mb-2">Heels</h3>
-              <p className="text-gray-600">Error elegance</p>
+              <h3 className="text-xl font-semibold mb-2 text-sentry-text">Heels</h3>
+              <p className="text-sentry-muted">Error elegance</p>
             </Link>
             <Link
               href="/products?category=Boots"
-              className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
+              className="bg-surface-100 border border-sentry-border rounded-lg p-8 text-center hover:border-primary-500 transition-colors"
             >
-              <h3 className="text-xl font-semibold mb-2">Chunky Boots</h3>
-              <p className="text-gray-600">Stomp bugs</p>
+              <h3 className="text-xl font-semibold mb-2 text-sentry-text">Chunky Boots</h3>
+              <p className="text-sentry-muted">Stomp bugs</p>
             </Link>
             <Link
               href="/products?category=Slippers"
-              className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
+              className="bg-surface-100 border border-sentry-border rounded-lg p-8 text-center hover:border-primary-500 transition-colors"
             >
-              <h3 className="text-xl font-semibold mb-2">Slippers</h3>
-              <p className="text-gray-600">Cozy coding</p>
+              <h3 className="text-xl font-semibold mb-2 text-sentry-text">Slippers</h3>
+              <p className="text-sentry-muted">Cozy coding</p>
             </Link>
           </div>
         </div>

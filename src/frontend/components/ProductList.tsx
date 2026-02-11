@@ -54,7 +54,7 @@ export default function ProductList({ products }: ProductListProps) {
   if (products.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-gray-600 text-lg">No products found</p>
+        <p className="text-sentry-muted text-lg">No products found</p>
       </div>
     );
   }
@@ -63,12 +63,12 @@ export default function ProductList({ products }: ProductListProps) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {Array.from({ length: 8 }).map((_, idx) => (
-          <div key={idx} className="bg-white rounded-lg shadow-md overflow-hidden h-96 animate-pulse">
-            <div className="h-48 bg-gray-300"></div>
+          <div key={idx} className="bg-surface-100 rounded-lg border border-sentry-border overflow-hidden h-96 animate-pulse">
+            <div className="h-48 bg-surface-50"></div>
             <div className="p-4">
-              <div className="h-4 bg-gray-300 rounded mb-2"></div>
-              <div className="h-3 bg-gray-300 rounded mb-4"></div>
-              <div className="h-8 bg-gray-300 rounded"></div>
+              <div className="h-4 bg-surface-50 rounded mb-2"></div>
+              <div className="h-3 bg-surface-50 rounded mb-4"></div>
+              <div className="h-8 bg-surface-50 rounded"></div>
             </div>
           </div>
         ))}
