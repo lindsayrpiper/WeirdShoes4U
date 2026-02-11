@@ -5,7 +5,8 @@ import { Product } from '@/types';
 
 async function getFeaturedProducts(): Promise<Product[]> {
   try {
-    const response = await fetch(`http://localhost:3000/api/products?featured=true`, {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+    const response = await fetch(`${baseUrl}/api/products?featured=true`, {
       cache: 'no-store',
     });
     const data = await response.json();
@@ -22,12 +23,12 @@ export default async function Home() {
   return (
     <div>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-600 to-primary-800 text-white py-20">
+      <section className="bg-gradient-to-r from-purple-600 to-purple-900 text-white py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl font-bold mb-6">Welcome to EcomStore</h1>
+            <h1 className="text-5xl font-bold mb-6">WeirdShoes4U - Sentry Edition</h1>
             <p className="text-xl mb-8">
-              Discover amazing products at unbeatable prices
+              Funky Sentry-themed shoes for developers who debug in style
             </p>
             <div className="mb-8">
               <SearchBar />
@@ -59,28 +60,35 @@ export default async function Home() {
       {/* Categories Section */}
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Shop by Category</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <h2 className="text-3xl font-bold text-center mb-12">Shop by Style</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Link
-              href="/products?category=Electronics"
+              href="/products?category=Running Shoes"
               className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
             >
-              <h3 className="text-xl font-semibold mb-2">Electronics</h3>
-              <p className="text-gray-600">Latest tech gadgets</p>
+              <h3 className="text-xl font-semibold mb-2">Running Shoes</h3>
+              <p className="text-gray-600">Debug on the run</p>
             </Link>
             <Link
-              href="/products?category=Accessories"
+              href="/products?category=Heels"
               className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
             >
-              <h3 className="text-xl font-semibold mb-2">Accessories</h3>
-              <p className="text-gray-600">Essential add-ons</p>
+              <h3 className="text-xl font-semibold mb-2">Heels</h3>
+              <p className="text-gray-600">Error elegance</p>
             </Link>
             <Link
-              href="/products"
+              href="/products?category=Boots"
               className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
             >
-              <h3 className="text-xl font-semibold mb-2">All Products</h3>
-              <p className="text-gray-600">Browse everything</p>
+              <h3 className="text-xl font-semibold mb-2">Chunky Boots</h3>
+              <p className="text-gray-600">Stomp bugs</p>
+            </Link>
+            <Link
+              href="/products?category=Slippers"
+              className="bg-white rounded-lg shadow-md p-8 text-center hover:shadow-lg transition-shadow"
+            >
+              <h3 className="text-xl font-semibold mb-2">Slippers</h3>
+              <p className="text-gray-600">Cozy coding</p>
             </Link>
           </div>
         </div>

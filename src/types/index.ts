@@ -9,6 +9,11 @@ export interface Product {
   image: string;
   stock: number;
   featured?: boolean;
+  sizes?: string[];
+  colors?: string[];
+  thumbnail?: string;
+  productId?: string;
+  type?: string;
 }
 
 export interface CartItem {

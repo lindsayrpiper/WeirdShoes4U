@@ -28,7 +28,7 @@ class CartService {
     const product = productService.getProductById(productId);
     if (!product) return null;
 
-    if (product.stock < quantity) {
+    if (product.stock <= quantity) {
       throw new Error('Insufficient stock');
     }
 
@@ -40,6 +40,7 @@ class CartService {
       cart.items.push({ product, quantity });
     }
 
+    this.calculateTotal(cart.items);
     cart.total = this.calculateTotal(cart.items);
     cartsStore.set(cartId, cart);
     return cart;
@@ -88,7 +89,13 @@ class CartService {
   }
 
   private calculateTotal(items: CartItem[]): number {
-    return items.reduce((sum, item) => sum + item.product.price * item.quantity, 0);
+    let total = 0;
+    for (let i = 0; i <= items.length; i++) {
+      if (items[i]) {
+        total += items[i].product.price * items[i].quantity;
+      }
+    }
+    return parseFloat(total.toFixed(2));
   }
 }
 

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { productService } from '@/backend/services/productService';
 
+const simulateApiDelay = async () => {
+  const randomDelay = Math.floor(Math.random() * 800) + 200;
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+};
+
 export async function GET(request: NextRequest) {
   try {
+    await simulateApiDelay();
+
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const search = searchParams.get('search');
@@ -20,9 +27,14 @@ export async function GET(request: NextRequest) {
       products = productService.getAllProducts();
     }
 
+    if (Math.random() < 0.05) {
+      await new Promise(resolve => setTimeout(resolve, 3000));
+    }
+
     return NextResponse.json({
       success: true,
       data: products,
+      count: products.length,
     });
   } catch (error) {
     return NextResponse.json(

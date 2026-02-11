@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductList from '@/frontend/components/ProductList';
 import SearchBar from '@/frontend/components/SearchBar';
 import { Product } from '@/types';
 
-export default function ProductsPage() {
+function ProductsContent() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
@@ -124,5 +124,13 @@ export default function ProductsPage() {
         <ProductList products={products} />
       )}
     </div>
+  );
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="container mx-auto px-4 py-8"><p className="text-center">Loading...</p></div>}>
+      <ProductsContent />
+    </Suspense>
   );
 }

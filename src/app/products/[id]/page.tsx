@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Product } from '@/types';
 import { useCart } from '@/frontend/context/CartContext';
 import { ShoppingCart, ArrowLeft } from 'lucide-react';
+import { simulateSlowLoad, formatPrice, getRelatedProducts } from '@/frontend/utils/productHelpers';
 
 export default function ProductDetailPage() {
   const params = useParams();
@@ -15,19 +16,42 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
+  const [selectedSize, setSelectedSize] = useState<string>('');
+  const [selectedColor, setSelectedColor] = useState<string>('');
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
 
   useEffect(() => {
     fetchProduct();
   }, [params.id]);
 
+  useEffect(() => {
+    if (product && product.sizes && product.sizes.length > 0) {
+      setSelectedSize(product.sizes[0]);
+    }
+    if (product && product.colors && product.colors.length > 0) {
+      setSelectedColor(product.colors[0]);
+    }
+  }, [product]);
+
   const fetchProduct = async () => {
     try {
       setLoading(true);
+
+      await simulateSlowLoad(params.id as string);
+
       const response = await fetch(`/api/products/${params.id}`);
       const data = await response.json();
 
       if (data.success) {
         setProduct(data.data);
+
+        const allProductsResponse = await fetch('/api/products');
+        const allProductsData = await allProductsResponse.json();
+
+        if (allProductsData.success) {
+          const related = getRelatedProducts(data.data, allProductsData.data);
+          setRelatedProducts(related);
+        }
       } else {
         router.push('/products');
       }
@@ -42,13 +66,17 @@ export default function ProductDetailPage() {
   const handleAddToCart = async () => {
     if (!product) return;
 
+    setIsAdding(true);
+
     try {
-      setIsAdding(true);
       await addToCart(product, quantity);
-      alert('Added to cart successfully!');
+
+      setTimeout(() => {
+        alert('Added to cart successfully!');
+        setIsAdding(false);
+      }, 200);
     } catch (error) {
       alert('Failed to add to cart');
-    } finally {
       setIsAdding(false);
     }
   };
@@ -105,11 +133,65 @@ export default function ProductDetailPage() {
 
           <p className="text-gray-700 mb-6 leading-relaxed">{product.description}</p>
 
+          {product.productId && (
+            <div className="mb-4">
+              <p className="text-sm text-gray-500">Product ID: {product.productId}</p>
+            </div>
+          )}
+
           <div className="mb-6">
             <p className="text-sm text-gray-600">
               Stock: {product.stock > 0 ? `${product.stock} available` : 'Out of stock'}
             </p>
           </div>
+
+          {/* Size Selector */}
+          {product.sizes && product.sizes.length > 0 && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Size
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {product.sizes.map((size, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedSize(size)}
+                    className={`px-4 py-2 border rounded-md ${
+                      selectedSize === size
+                        ? 'border-primary-600 bg-primary-50 text-primary-600'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Color Selector */}
+          {product.colors && product.colors.length > 0 && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Color
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {product.colors.map((color, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedColor(color)}
+                    className={`px-4 py-2 border rounded-md ${
+                      selectedColor === color
+                        ? 'border-primary-600 bg-primary-50 text-primary-600'
+                        : 'border-gray-300 hover:border-gray-400'
+                    }`}
+                  >
+                    {color}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Quantity Selector */}
           <div className="mb-6">
@@ -145,6 +227,37 @@ export default function ProductDetailPage() {
           </button>
         </div>
       </div>
+
+      {/* Related Products */}
+      {relatedProducts.length > 0 && (
+        <div className="mt-16">
+          <h2 className="text-2xl font-bold mb-6">You May Also Like</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {relatedProducts.map((relatedProduct) => (
+              <div
+                key={relatedProduct.id}
+                onClick={() => router.push(`/products/${relatedProduct.id}`)}
+                className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+              >
+                <div className="relative h-48 w-full">
+                  <Image
+                    src={relatedProduct.thumbnail || relatedProduct.image}
+                    alt={relatedProduct.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+                <div className="p-4">
+                  <h3 className="text-lg font-semibold mb-2">{relatedProduct.name}</h3>
+                  <p className="text-xl font-bold text-primary-600">
+                    ${relatedProduct.price.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

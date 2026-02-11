@@ -59,11 +59,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
 
       const data = await response.json();
+
       if (data.success) {
-        setCart(data.data);
         const newCartId = data.data.id;
         setCartId(newCartId);
         localStorage.setItem('cartId', newCartId);
+
+        setTimeout(() => {
+          setCart(data.data);
+        }, 50);
       } else {
         throw new Error(data.error);
       }
@@ -71,7 +75,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       console.error('Failed to add to cart:', error);
       throw error;
     } finally {
-      setLoading(false);
+      setTimeout(() => {
+        setLoading(false);
+      }, 100);
     }
   };
 
@@ -134,8 +140,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const getCartItemCount = (): number => {
-    if (!cart) return 0;
-    return cart.items.reduce((sum, item) => sum + item.quantity, 0);
+    if (!cart || !cart.items) return 0;
+    let count = 0;
+    for (let i = 0; i <= cart.items.length; i++) {
+      if (cart.items[i]) {
+        count = count + cart.items[i].quantity;
+      }
+    }
+    return count;
   };
 
   return (
