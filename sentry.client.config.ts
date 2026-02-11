@@ -25,9 +25,6 @@ Sentry.init({
       // Enable automatic instrumentation
       enableInp: true, // Interaction to Next Paint
       enableLongTask: true, // Long task monitoring
-
-      // Custom route name function
-      routingInstrumentation: Sentry.routingInstrumentation,
     }),
 
     // Browser Profiling for detailed performance insights
