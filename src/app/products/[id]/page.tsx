@@ -242,6 +242,36 @@ export default function ProductDetailPage() {
     );
   };
 
+  const handleImageError = (context: string, imageUrl: string, productData?: { id: string; name: string }) => {
+    Sentry.captureException(new Error(`Image failed to load: ${context}`), {
+      level: 'warning',
+      tags: {
+        error_type: 'image_load_error',
+        product_id: productData?.id || params.id,
+        page: 'product_detail',
+        context,
+      },
+      contexts: {
+        image: {
+          url: imageUrl,
+          context,
+          product_id: productData?.id,
+          product_name: productData?.name,
+        },
+      },
+    });
+
+    Sentry.addBreadcrumb({
+      category: 'ui.error',
+      message: `Image load failed: ${context}`,
+      level: 'error',
+      data: {
+        image_url: imageUrl,
+        context,
+      },
+    });
+  };
+
   const handleAddToCart = async () => {
     if (!product) return;
 
@@ -361,6 +391,7 @@ export default function ProductDetailPage() {
             alt={product.name}
             fill
             className="object-cover"
+            onError={() => handleImageError('main_product_image', product.image, { id: product.id, name: product.name })}
           />
         </div>
 
@@ -579,6 +610,7 @@ export default function ProductDetailPage() {
                     alt={relatedProduct.name}
                     fill
                     className="object-cover"
+                    onError={() => handleImageError('related_product_image', relatedProduct.thumbnail || relatedProduct.image, { id: relatedProduct.id, name: relatedProduct.name })}
                   />
                 </div>
                 <div className="p-4">

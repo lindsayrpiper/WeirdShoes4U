@@ -113,6 +113,35 @@ export default function ProductCard({ product }: ProductCardProps) {
     }, 100);
   };
 
+  const handleImageError = () => {
+    Sentry.captureException(new Error(`Product image failed to load: ${product.name}`), {
+      level: 'warning',
+      tags: {
+        error_type: 'image_load_error',
+        product_id: product.id,
+        component: 'ProductCard',
+      },
+      contexts: {
+        product: {
+          id: product.id,
+          name: product.name,
+          image_url: productImage,
+          category: product.category,
+        },
+      },
+    });
+
+    Sentry.addBreadcrumb({
+      category: 'ui.error',
+      message: `Product image load failed: ${product.name}`,
+      level: 'error',
+      data: {
+        product_id: product.id,
+        image_url: productImage,
+      },
+    });
+  };
+
   const productImage = getProductImage(product);
   const inStock = checkStock(product);
 
@@ -142,6 +171,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             fill
             className="object-cover"
             onLoad={handleImageLoad}
+            onError={handleImageError}
           />
           {product.featured && (
             <div className="absolute top-2 right-2 bg-purple-600 text-white px-2 py-1 rounded text-xs font-bold">
