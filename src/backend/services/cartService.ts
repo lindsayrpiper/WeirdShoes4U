@@ -1,7 +1,9 @@
-import { Cart, CartItem, Product } from '@/backend/models';
+import { Cart, CartItem } from '@/backend/models';
 import { cartsStore } from '@/backend/lib/mockData';
 import { productService } from './productService';
 import { v4 as uuidv4 } from 'uuid';
+import { trackServiceOperation } from '@/backend/utils/sentryPerformance';
+import * as Sentry from '@sentry/nextjs';
 
 class CartService {
   getCart(cartId: string): Cart | undefined {
@@ -20,30 +22,52 @@ class CartService {
   }
 
   addItemToCart(cartId: string, productId: string, quantity: number = 1): Cart | null {
-    let cart = this.getCart(cartId);
-    if (!cart) {
-      cart = this.createCart();
-    }
+    return Sentry.startSpan(
+      { name: 'CartService.addItemToCart', op: 'function' },
+      () => {
+        const startTime = Date.now();
 
-    const product = productService.getProductById(productId);
-    if (!product) return null;
+        let cart = this.getCart(cartId);
+        if (!cart) {
+          cart = this.createCart();
+        }
 
-    if (product.stock <= quantity) {
-      throw new Error('Insufficient stock');
-    }
+        const product = productService.getProductById(productId);
+        if (!product) return null;
 
-    const existingItem = cart.items.find(item => item.product.id === productId);
+        // Intentional bug: using <= instead of <
+        if (product.stock <= quantity) {
+          const error = new Error('Insufficient stock');
+          Sentry.captureException(error, {
+            tags: {
+              product_id: productId,
+              requested_quantity: quantity,
+              available_stock: product.stock,
+            },
+          });
+          throw error;
+        }
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      cart.items.push({ product, quantity });
-    }
+        const existingItem = cart.items.find(item => item.product.id === productId);
 
-    this.calculateTotal(cart.items);
-    cart.total = this.calculateTotal(cart.items);
-    cartsStore.set(cartId, cart);
-    return cart;
+        if (existingItem) {
+          existingItem.quantity += quantity;
+        } else {
+          cart.items.push({ product, quantity });
+        }
+
+        // Intentional performance issue: calculating total twice
+        this.calculateTotal(cart.items);
+        cart.total = this.calculateTotal(cart.items);
+
+        cartsStore.set(cartId, cart);
+
+        const duration = Date.now() - startTime;
+        Sentry.setMeasurement('cart_add_item_duration', duration, 'millisecond');
+
+        return cart;
+      }
+    );
   }
 
   updateItemQuantity(cartId: string, productId: string, quantity: number): Cart | null {

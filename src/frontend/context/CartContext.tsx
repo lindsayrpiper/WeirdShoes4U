@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Cart, Product } from '@/types';
+import { trackApiCall } from '@/frontend/utils/sentryPerformance';
+import * as Sentry from '@sentry/nextjs';
 
 interface CartContextType {
   cart: Cart | null;
@@ -53,39 +55,59 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const addToCart = async (product: Product, quantity: number = 1) => {
-    try {
-      setLoading(true);
-      const response = await fetch('/api/cart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cartId,
-          productId: product.id,
-          quantity,
-        }),
-      });
+    return await trackApiCall('/api/cart [POST]', async () => {
+      try {
+        setLoading(true);
 
-      const data = await response.json();
+        Sentry.addBreadcrumb({
+          category: 'cart',
+          message: `Adding product to cart: ${product.name}`,
+          data: {
+            product_id: product.id,
+            quantity,
+          },
+        });
 
-      if (data.success) {
-        const newCartId = data.data.id;
-        setCartId(newCartId);
-        localStorage.setItem('cartId', newCartId);
+        const response = await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            cartId,
+            productId: product.id,
+            quantity,
+          }),
+        });
 
+        const data = await response.json();
+
+        if (data.success) {
+          const newCartId = data.data.id;
+          setCartId(newCartId);
+          localStorage.setItem('cartId', newCartId);
+
+          setTimeout(() => {
+            setCart(data.data);
+          }, 50);
+
+          Sentry.setMeasurement('cart_items_count', data.data.items.length, 'none');
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        console.error('Failed to add to cart:', error);
+        Sentry.captureException(error, {
+          tags: {
+            action: 'add_to_cart',
+            product_id: product.id,
+          },
+        });
+        throw error;
+      } finally {
         setTimeout(() => {
-          setCart(data.data);
-        }, 50);
-      } else {
-        throw new Error(data.error);
+          setLoading(false);
+        }, 100);
       }
-    } catch (error) {
-      console.error('Failed to add to cart:', error);
-      throw error;
-    } finally {
-      setTimeout(() => {
-        setLoading(false);
-      }, 100);
-    }
+    });
   };
 
   const updateQuantity = async (productId: string, quantity: number) => {

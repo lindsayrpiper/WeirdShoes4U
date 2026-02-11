@@ -7,6 +7,8 @@ import { useCart } from '@/frontend/context/CartContext';
 import { ShoppingCart } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { simulateSlowLoad, getProductImage, formatPrice, checkStock } from '@/frontend/utils/productHelpers';
+import { trackComponentRender, trackInteraction, measureAsync } from '@/frontend/utils/sentryPerformance';
+import * as Sentry from '@sentry/nextjs';
 
 interface ProductCardProps {
   product: Product;
@@ -20,9 +22,17 @@ export default function ProductCard({ product }: ProductCardProps) {
   const [displayPrice, setDisplayPrice] = useState(product.price);
 
   useEffect(() => {
+    const endRenderTracking = trackComponentRender(`ProductCard-${product.id}`);
+
     const loadProduct = async () => {
-      await simulateSlowLoad(product.id);
-      setIsLoading(false);
+      await measureAsync(
+        `load_product_${product.id}`,
+        async () => {
+          await simulateSlowLoad(product.id);
+          setIsLoading(false);
+        },
+        'ui.load'
+      );
     };
 
     loadProduct();
@@ -30,7 +40,21 @@ export default function ProductCard({ product }: ProductCardProps) {
     const priceInterval = setInterval(() => {
       const newPrice = parseFloat(formatPrice(product.price, product.id).replace('$', ''));
       setDisplayPrice(newPrice);
+
+      // Track price changes
+      if (newPrice !== product.price) {
+        Sentry.addBreadcrumb({
+          category: 'ui.price',
+          message: `Price changed for product ${product.id}`,
+          data: {
+            original: product.price,
+            new: newPrice,
+          },
+        });
+      }
     }, 5000);
+
+    endRenderTracking();
 
     return () => {
       clearInterval(priceInterval);
@@ -41,15 +65,44 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
 
+    // Track user interaction
+    trackInteraction('add_to_cart', 'product', {
+      product_id: product.id,
+      product_name: product.name,
+      price: displayPrice,
+    });
+
     setIsAdding(true);
 
     try {
-      await addToCart(product);
+      await measureAsync(
+        'add_to_cart_operation',
+        async () => {
+          await addToCart(product);
+        },
+        'ui.action'
+      );
+
       setTimeout(() => {
         setIsAdding(false);
       }, 300);
     } catch (error) {
       console.error('Failed to add to cart:', error);
+
+      Sentry.captureException(error, {
+        tags: {
+          product_id: product.id,
+          action: 'add_to_cart',
+        },
+        contexts: {
+          product: {
+            id: product.id,
+            name: product.name,
+            price: displayPrice,
+          },
+        },
+      });
+
       setIsAdding(false);
     }
   };
