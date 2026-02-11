@@ -27,10 +27,6 @@ export async function GET(request: NextRequest) {
       products = productService.getAllProducts();
     }
 
-    if (Math.random() < 0.05) {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-    }
-
     return NextResponse.json({
       success: true,
       data: products,
