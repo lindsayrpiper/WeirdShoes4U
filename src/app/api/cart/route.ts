@@ -22,7 +22,7 @@ export async function GET(request: NextRequest) {
       let cart = cartService.getCart(cartId);
       if (!cart) {
         Sentry.logger.info('Cart not found, creating new cart', { requestedCartId: cartId });
-        cart = cartService.createCart();
+        cart = cartService.createCart(undefined, cartId);
       }
 
       Sentry.logger.info('Cart fetched', { cartId: cart.id, itemCount: cart.items.length, total: cart.total });
