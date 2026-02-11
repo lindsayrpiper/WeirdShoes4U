@@ -2,6 +2,7 @@ import { Cart, CartItem, Product } from '@/backend/models';
 import { cartsStore } from '@/backend/lib/mockData';
 import { productService } from './productService';
 import { v4 as uuidv4 } from 'uuid';
+import * as Sentry from '@sentry/nextjs';
 
 class CartService {
   getCart(cartId: string): Cart | undefined {
@@ -20,30 +21,38 @@ class CartService {
   }
 
   addItemToCart(cartId: string, productId: string, quantity: number = 1): Cart | null {
-    let cart = this.getCart(cartId);
-    if (!cart) {
-      cart = this.createCart();
-    }
+    return Sentry.startSpan({ name: 'cartService.addItemToCart', op: 'db.query', attributes: { cartId, productId, quantity } }, () => {
+      let cart = this.getCart(cartId);
+      if (!cart) {
+        cart = this.createCart();
+      }
 
-    const product = productService.getProductById(productId);
-    if (!product) return null;
+      const product = productService.getProductById(productId);
+      if (!product) {
+        Sentry.logger.warn('Product not found for cart add', { productId });
+        return null;
+      }
 
-    if (product.stock <= quantity) {
-      throw new Error('Insufficient stock');
-    }
+      if (product.stock <= quantity) {
+        Sentry.logger.warn('Insufficient stock for cart add', { productId, requested: quantity, available: product.stock });
+        throw new Error('Insufficient stock');
+      }
 
-    const existingItem = cart.items.find(item => item.product.id === productId);
+      const existingItem = cart.items.find(item => item.product.id === productId);
 
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      cart.items.push({ product, quantity });
-    }
+      if (existingItem) {
+        existingItem.quantity += quantity;
+        Sentry.logger.info('Incremented existing cart item', { productId, newQuantity: existingItem.quantity });
+      } else {
+        cart.items.push({ product, quantity });
+        Sentry.logger.info('Added new item to cart', { productId, productName: product.name, quantity });
+      }
 
-    this.calculateTotal(cart.items);
-    cart.total = this.calculateTotal(cart.items);
-    cartsStore.set(cartId, cart);
-    return cart;
+      this.calculateTotal(cart.items);
+      cart.total = this.calculateTotal(cart.items);
+      cartsStore.set(cartId, cart);
+      return cart;
+    });
   }
 
   updateItemQuantity(cartId: string, productId: string, quantity: number): Cart | null {

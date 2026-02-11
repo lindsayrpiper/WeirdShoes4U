@@ -6,6 +6,7 @@ import { useCart } from '@/frontend/context/CartContext';
 import { X, Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { CartItem } from '@/types';
 import { useState } from 'react';
+import * as Sentry from '@sentry/nextjs';
 
 const MOCK_ATTRIBUTES: Record<string, { color: string; size: string }> = {
   '1': { color: 'Midnight Black', size: '10' },
@@ -26,6 +27,12 @@ function SlideOutCartItem({ item }: { item: CartItem }) {
 
   const handleQuantityChange = async (newQuantity: number) => {
     if (newQuantity < 1 || newQuantity > item.product.stock) return;
+    Sentry.logger.info('Cart slide-out: quantity change', {
+      productId: item.product.id,
+      productName: item.product.name,
+      oldQuantity: item.quantity,
+      newQuantity,
+    });
     try {
       setIsUpdating(true);
       await updateQuantity(item.product.id, newQuantity);
@@ -37,6 +44,10 @@ function SlideOutCartItem({ item }: { item: CartItem }) {
   };
 
   const handleRemoveItem = async (productId: string) => {
+    Sentry.logger.info('Cart slide-out: remove item', {
+      productId,
+      productName: item.product.name,
+    });
     try {
       setIsUpdating(true);
       await removeFromCart(productId);
@@ -115,6 +126,11 @@ export default function CartSlideOut() {
   const { cart, isCartOpen, closeCart, getCartItemCount } = useCart();
   const itemCount = getCartItemCount();
 
+  const handleClose = () => {
+    Sentry.logger.info('Cart slide-out closed', { itemCount, cartTotal: cart?.total ?? 0 });
+    closeCart();
+  };
+
   return (
     <>
       {/* Backdrop */}
@@ -122,7 +138,7 @@ export default function CartSlideOut() {
         className={`fixed inset-0 bg-black transition-opacity duration-300 z-40 ${
           isCartOpen ? 'opacity-50' : 'opacity-0 pointer-events-none'
         }`}
-        onClick={closeCart}
+        onClick={handleClose}
       />
 
       {/* Slide-out Panel */}
@@ -145,7 +161,7 @@ export default function CartSlideOut() {
             </h2>
           </div>
           <button
-            onClick={closeCart}
+            onClick={handleClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             aria-label="Close cart"
           >
@@ -163,7 +179,7 @@ export default function CartSlideOut() {
                 Add some items to get started
               </p>
               <button
-                onClick={closeCart}
+                onClick={handleClose}
                 className="mt-6 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium"
               >
                 Continue Shopping
@@ -195,14 +211,14 @@ export default function CartSlideOut() {
             </div>
             <Link
               href="/cart"
-              onClick={closeCart}
+              onClick={handleClose}
               className="block w-full text-center py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-semibold"
             >
               View Full Cart
             </Link>
             <Link
               href="/checkout"
-              onClick={closeCart}
+              onClick={handleClose}
               className="block w-full text-center py-3 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-semibold"
             >
               Checkout

@@ -6,6 +6,7 @@ import { useCart } from '@/frontend/context/CartContext';
 import { useAuth } from '@/frontend/context/AuthContext';
 import { ShippingAddress } from '@/types';
 import { ChevronRight, CreditCard, MapPin, ClipboardList } from 'lucide-react';
+import * as Sentry from '@sentry/nextjs';
 
 const MOCK_ATTRIBUTES: Record<string, { color: string; size: string }> = {
   '1': { color: 'Midnight Black', size: '10' },
@@ -107,44 +108,88 @@ export default function CheckoutPage() {
   const tax = subtotal * 0.1;
   const total = subtotal + shipping + tax;
 
+  const handleStepChange = (newStep: number) => {
+    const stepNames = ['', 'shipping', 'payment', 'review'];
+    Sentry.logger.info('Checkout step transition', {
+      fromStep: stepNames[step],
+      toStep: stepNames[newStep],
+      cartId,
+      itemCount: cart?.items.length ?? 0,
+    });
+    setStep(newStep);
+  };
+
   const handleSubmitOrder = async () => {
-    setError('');
-    setLoading(true);
-
-    const finalShippingAddress: ShippingAddress = {
-      fullName: name,
-      address: shippingAddress.address,
-      city: shippingAddress.city,
-      state: shippingAddress.state,
-      zipCode: shippingAddress.zipCode,
-      country: shippingAddress.country,
-      phone,
-    };
-
-    try {
-      const response = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: user?.id,
+    return Sentry.startSpan(
+      {
+        name: 'checkout.submit_order',
+        op: 'checkout',
+        attributes: {
+          cartId: cartId ?? '',
+          userId: user?.id ?? '',
+          itemCount: cart?.items.length ?? 0,
+          orderTotal: total,
+        },
+      },
+      async () => {
+        setError('');
+        setLoading(true);
+        Sentry.logger.info('Order submission started', {
           cartId,
-          shippingAddress: finalShippingAddress,
-        }),
-      });
+          userId: user?.id,
+          subtotal,
+          shipping,
+          tax,
+          total,
+          itemCount: cart?.items.length ?? 0,
+        });
 
-      const data = await response.json();
+        const finalShippingAddress: ShippingAddress = {
+          fullName: name,
+          address: shippingAddress.address,
+          city: shippingAddress.city,
+          state: shippingAddress.state,
+          zipCode: shippingAddress.zipCode,
+          country: shippingAddress.country,
+          phone,
+        };
 
-      if (data.success) {
-        clearCart();
-        router.push(`/orders/${data.data.id}`);
-      } else {
-        setError(data.error || 'Failed to create order');
+        try {
+          const response = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: user?.id,
+              cartId,
+              shippingAddress: finalShippingAddress,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            Sentry.logger.info('Order submitted successfully', {
+              orderId: data.data.id,
+              orderTotal: total,
+            });
+            clearCart();
+            router.push(`/orders/${data.data.id}`);
+          } else {
+            Sentry.logger.error('Order submission failed', {
+              error: data.error,
+              cartId,
+            });
+            setError(data.error || 'Failed to create order');
+          }
+        } catch (err) {
+          Sentry.captureException(err);
+          Sentry.logger.error('Order submission error', { cartId });
+          setError('Failed to create order. Please try again.');
+        } finally {
+          setLoading(false);
+        }
       }
-    } catch (err) {
-      setError('Failed to create order. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    );
   };
 
   return (
@@ -375,7 +420,7 @@ export default function CheckoutPage() {
           )}
 
           <button
-            onClick={() => setStep(2)}
+            onClick={() => handleStepChange(2)}
             className="w-full bg-primary-600 text-white py-3 rounded-md hover:bg-primary-700 transition-colors font-semibold flex items-center justify-center gap-2"
           >
             Proceed to Payment
@@ -453,13 +498,13 @@ export default function CheckoutPage() {
 
           <div className="flex gap-4 mt-8">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => handleStepChange(1)}
               className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-md hover:bg-gray-50 transition-colors font-semibold"
             >
               Back
             </button>
             <button
-              onClick={() => setStep(3)}
+              onClick={() => handleStepChange(3)}
               className="flex-1 bg-primary-600 text-white py-3 rounded-md hover:bg-primary-700 transition-colors font-semibold flex items-center justify-center gap-2"
             >
               Review Order
@@ -522,7 +567,7 @@ export default function CheckoutPage() {
 
           <div className="flex gap-4 mt-8">
             <button
-              onClick={() => setStep(1)}
+              onClick={() => handleStepChange(1)}
               className="flex-1 border border-gray-300 text-gray-700 py-3 rounded-md hover:bg-gray-50 transition-colors font-semibold"
             >
               Back
