@@ -9,8 +9,8 @@ import { AuthProvider } from '@/frontend/context/AuthContext';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'EcomStore - Your Online Shopping Destination',
-  description: 'Shop the latest products at great prices',
+  title: 'WeirdShoes4U - Funky Shoes for Developers',
+  description: 'Shop weird and wonderful shoes for developers who debug in style',
 };
 
 export default function RootLayout({
@@ -28,9 +28,9 @@ export default function RootLayout({
             <main className="min-h-screen">
               {children}
             </main>
-            <footer className="bg-gray-800 text-white py-8 mt-12">
+            <footer className="bg-surface-400 border-t border-sentry-border text-sentry-muted py-8 mt-12">
               <div className="container mx-auto px-4 text-center">
-                <p>&copy; 2024 EcomStore. All rights reserved.</p>
+                <p>&copy; 2025 WeirdShoes4U. All rights reserved.</p>
               </div>
             </footer>
           </CartProvider>
