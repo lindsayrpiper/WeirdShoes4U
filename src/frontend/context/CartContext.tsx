@@ -1,12 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Cart, CartItem, Product } from '@/types';
+import { Cart, Product } from '@/types';
 
 interface CartContextType {
   cart: Cart | null;
   cartId: string | null;
   loading: boolean;
+  isCartOpen: boolean;
+  openCart: () => void;
+  closeCart: () => void;
   addToCart: (product: Product, quantity?: number) => Promise<void>;
   updateQuantity: (productId: string, quantity: number) => Promise<void>;
   removeFromCart: (productId: string) => Promise<void>;
@@ -20,6 +23,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
   const [cartId, setCartId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+
+  const openCart = () => setIsCartOpen(true);
+  const closeCart = () => setIsCartOpen(false);
 
   // Load cart ID from localStorage on mount
   useEffect(() => {
@@ -156,6 +163,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         cart,
         cartId,
         loading,
+        isCartOpen,
+        openCart,
+        closeCart,
         addToCart,
         updateQuantity,
         removeFromCart,
