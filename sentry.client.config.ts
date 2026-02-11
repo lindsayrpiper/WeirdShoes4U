@@ -7,15 +7,20 @@ Sentry.init({
   tracesSampleRate: 1.0, // Capture 100% of transactions for development
 
   // Session Replay
-  replaysSessionSampleRate: 0.1, // Sample 10% of sessions
-  replaysOnErrorSampleRate: 1.0, // Capture 100% of sessions with errors
+  replaysSessionSampleRate: 1.0, // Capture 100% of sessions with replay
+  replaysOnErrorSampleRate: 1.0,
 
   integrations: [
-    // Session Replay for visual debugging
+    // Session Replay for visual debugging with network capture
     Sentry.replayIntegration({
       maskAllText: false,
       blockAllMedia: false,
+      networkDetailAllowUrls: ['/api/cart', '/api/orders', '/api/products', '/api/auth'],
+      networkCaptureBodies: true,
     }),
+
+    // Canvas replay for capturing canvas elements
+    Sentry.replayCanvasIntegration(),
 
     // Browser Tracing for automatic performance monitoring
     Sentry.browserTracingIntegration({
