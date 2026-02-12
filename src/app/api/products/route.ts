@@ -29,6 +29,13 @@ export async function GET(request: NextRequest) {
 
       // Track different product fetching operations
       if (search) {
+        // Track search query metric
+        addBreadcrumb('api', `Product search request: query="${search}", length_bucket=${search.length <= 3 ? 'short' : search.length <= 10 ? 'medium' : 'long'}`);
+        Sentry.logger.info('api.products.search.request', {
+          query: search,
+          query_length_bucket: search.length <= 3 ? 'short' : search.length <= 10 ? 'medium' : 'long',
+        });
+
         products = await trackServiceOperation('productService', 'searchProducts', async () => {
           return productService.searchProducts(search);
         });
